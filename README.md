@@ -1,4 +1,4 @@
-# dc09_dialler
+# dc09_spt (Secure Premises Transceiver a.k.a. dialler)
 A set of python classes to implement a dialler using the SIA-DC09 protocol set and conforming to the EN-50136-1 norm
 
 The provided classes should be enough to implement an dialler (SPT, Secure Premises Transceiver, in EN-50136-1 lingo) with the following functions
@@ -36,7 +36,7 @@ The events sent in such an DC09 block is defined in the SIA-DC07 standard.
 
 This DC07 standard is basically a description how an receiver can communicate with AMS (Alarm Monitoring Station) software and can transfer messages in various transmitter protocols.
 
-This set of classes implements the SIA-DC03 (AKA "SIA") and the SIA-DC05 (AKA "CID") transmitter protocols. These two protocols make up for well over 90% of the used message formats in alarm messaging. In effect it should be possible to cover most use cases.
+This set of classes implements the SIA-DC03 (a.k.a. "SIA") and the SIA-DC05 (a.k.a. "CID") transmitter protocols. These two protocols make up for well over 90% of the used message formats in alarm messaging. In effect it should be possible to cover most use cases.
 
 ## Dialler configuration
 In general the configuration consists of defining account number, encryption key and communication paths.

@@ -3,14 +3,14 @@
 # (c 2018 van Ovost Automatisering b.v.
 # Author : Jacq. van Ovost
 # ----------------------------
-from dc09_msg import *
-from dc03_msg import *
-from dc05_msg import *
-import socket
+from dc09_spt.msg.dc09_msg import *
+from dc09_spt.msg.dc05_msg import *
+from dc09_spt.msg.dc03_msg import *
 import time
 import threading
 from collections import deque
-
+import logging
+from dc09_spt.comm.transpath import TransPath
 
 class dc09_spt():
     """
@@ -233,7 +233,7 @@ class dc09_spt():
         if extra != None:
             msg = msg + extra
         tup = self.msg_nr,  dc09type,  msg
-        print(tup)
+        logging.debug('Message queued nr %s type %s content "%s"',  self.msg_nr,  dc09type,  msg)
         self.queuelock.acquire()
         self.queue.append(tup)
         self.queuelock.release()
@@ -241,7 +241,7 @@ class dc09_spt():
             self.send.join()
             self.send = None
         if self.send == None:
-            self.send = event_thread(self.account, self.receiver, self.line, self.queue,  self.queuelock,  self.tpaths, self.tpaths_lock)
+            self.send = event_thread(self.account, self.receiver, self.line, self.queue,  self.queuelock,  self.tpaths, self.tpaths_lock,  self)
             self.send.start()
     
     def state(self):
@@ -256,78 +256,45 @@ class dc09_spt():
         if self.send != None:
             ret['send active'] = self.send.active()
         return ret
-    
         
-class TransPath:
-    """
-    Handle the basic tasks for establishing and maintaining a transmit path
-    """
-    def __init__(self,  host,  port,  account,  key=None,  receiver=None,  line=None,  timeout=5.0):
-        self.path_ok = 0
-        self.host = host
-        self.port = port
-        self.offset = 0
-        self.timeout = timeout
-        self.dc09 = dc09_msg(account,  key,  receiver,  line)
-# -----------------
-# send a poll and check result
-# ----------------
-    def poll(self):
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(self.timeout)
-            s.connect((self.host, self.port))
-            self.dc09.set_offset(self.offset)
-            msg = str.encode(self.dc09.dc09poll())
-            s.send(msg)
-            antw=s.recv(1024)
-            s.close()
-            answer = self.dc09.dc09answer(0, antw.decode())
-            print(0,  answer)
-            self.offset = answer[1]
-            if  answer[0] == 'ACK':
-                self.path_ok = 1
-                return 1
-            else:
-                self.path_ok = 0
-                return 0
-        except Exception as e:
-            self.path_ok = 0
-            print (0,  e)
-            return 0
-# -----------------
-# send a message and check result
-# ----------------
-    def message(self,  msg_nr,  type,  mess):
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(self.timeout)
-            s.connect((self.host, self.port))
-            self.dc09.set_offset(self.offset)
-            msg = str.encode(self.dc09.dc09block(msg_nr, type,  mess))
-            s.send(msg)
-            antw=s.recv(1024)
-            s.close()
-            answer = self.dc09.dc09answer(msg_nr, antw.decode())
-            print(msg_nr,  answer)
-            self.offset = answer[1]
-            if answer[0] == 'ACK':
-                self.path_ok = 1
-                return 1
-            else:
-                self.path_ok = 0
-                return 0
-        except Exception as e:
-            self.path_ok = 0
-            print (msg_nr,  e)
-            return 0
-# --------------------------
-# return path status
-# ----------------------
-    def ok(self):
-        return self.path_ok
-    
-    
+    def transfer_msg(self,  msg_nr,  type,  message,  path):
+        """
+        Transfer a message and decode the answer
+        if needed repeat with correct time offset
+        
+        parameters
+            msg 
+                the message to transfer
+            path
+                the path to transfer the message over
+        return value
+            true if message is transferred correct
+        """
+        ret = 0
+        dc09 = dc09_msg(path.account, path.key, path.receiver, path.line, path.offset)
+        mesg = str.encode(dc09.dc09block(msg_nr, type,  message))
+        conn = path.connect()
+        if conn != None:
+            conn.send(mesg)
+            antw = conn.receive(1024)
+            if antw != None:
+                res = dc09.dc09answer(msg_nr,  antw.decode())
+                if res != None:
+                    path.set_offset(res[1])
+                    if res[0] == 'NAK':
+                        dc09.set_offset(res[1])
+                        mesg = str.encode(dc09.dc09block(msg_nr, type,  msg))
+                        conn.send(mesg)
+                        antw = conn.receive(1024)
+                        if antw != None:
+                            res = dc09answer(self.msg_nr,  antw)
+                    if res[0] == 'ACK':
+                        ret = 1
+            logging.debug('Sent message nr %s type %s content %s to %s port %s answer %s',  msg_nr, type,  message,  path.host,  path.port,  antw)
+        if conn != None:
+            conn.disconnect()
+        return ret
+
 class poll_thread(threading.Thread):
     """
     Handle the polling tasks of SPT (Secured Premises Transciever)
@@ -405,11 +372,14 @@ class poll_thread(threading.Thread):
             main_polled = 0
             back_up_for_main = 0
             backup_polled = 0
+            dc09 = dc09_msg(self.account)
+            msg = dc09.dc09poll()
             if self.main_poll != None and self.main_poll_next <= now:
                 for ps in ('primary',  'secondary'):
                     if first or main_polled == 0:
                         if self.tpaths['main'][ps]['path'] != None:
-                            if self.tpaths['main'][ps]['path'].poll():
+#                            if self.tpaths['main'][ps]['path'].transfer(msg):
+                            if self.parent.transfer_msg(0,  "NULL",  msg, self.tpaths['main'][ps]['path']):
                                 main_polled = 1
                                 self.counter += 1
                                 if self.tpaths['main'][ps]['ok'] != 1:
@@ -423,7 +393,6 @@ class poll_thread(threading.Thread):
                                     self.tpaths['main'][ps]['ok'] = 0
                                     self.tpaths_lock.release()
                                     self.msg(self.fail_msg, 1,  0)
-                            print('main' , ps)
                 if main_polled == 0:
                     self.main_poll_ok = 0
                     self.main_ok = 0
@@ -440,7 +409,8 @@ class poll_thread(threading.Thread):
                 for ps in ('primary',  'secondary'):
                     if first or backup_polled == 0:
                         if self.tpaths['back-up'][ps]['path'] != None:
-                            if self.tpaths['back-up'][ps]['path'].poll():
+                            if self.parent.transfer_msg(0,  "NULL",  msg, self.tpaths['main'][ps]['path']):
+#                            if self.tpaths['back-up'][ps]['path'].poll():
                                 backup_polled = 1
                                 self.counter += 1
                                 if self.tpaths['back-up'][ps]['ok'] != 1:
@@ -454,7 +424,6 @@ class poll_thread(threading.Thread):
                                     self.tpaths['back-up'][ps]['ok'] = 0
                                     self.tpaths_lock.release()
                                     self.msg(self.fail_msg, 2,  0)
-                            print('back-up' , ps)
                 if backup_polled == 0:
                     self.backup_poll_ok = 0
                     self.backup_ok = 0
@@ -547,7 +516,7 @@ class event_thread(threading.Thread):
     """
     Handle the transmitting of events of SPT (Secured Premises Transciever)
     """
-    def __init__(self,  account, receiver,  line,  queue,  queuelock,  tpaths,  tpaths_lock):
+    def __init__(self,  account, receiver,  line,  queue,  queuelock,  tpaths,  tpaths_lock,  parent):
         """
         Handle the Transmitting of events as defined in 
             SIA DC09 specification
@@ -571,6 +540,7 @@ class event_thread(threading.Thread):
         self.tpaths = tpaths
         self.tpaths_lock = tpaths_lock
         self.send_retry_delay = 0.5
+        self.parent = parent
 # -----------------
 # send events while needed (call in thread)
 # checks message queue and retries
@@ -612,9 +582,8 @@ class event_thread(threading.Thread):
             for ps in ('primary',  'secondary'):
                 if msg_sent == 0 and self.tpaths[mb][ps]['path'] != None:
                     if self.tpaths[mb][ps]['ok']:
-                        if self.tpaths[mb][ps]['path'].message(mess[0], mess[1],  mess[2]):
+                        if self.parent.transfer_msg(mess[0], mess[1],  mess[2],  self.tpaths[mb][ps]['path']):
                             msg_sent = 1
-                            print(mb, ps)
         # ---------------------------
         # then try all available paths
         # --------------------------
@@ -622,12 +591,11 @@ class event_thread(threading.Thread):
             for mb in ('main',  'back-up'):
                 for ps in ('primary',  'secondary'):
                     if msg_sent == 0 and self.tpaths[mb][ps]['path'] != None:
-                        if self.tpaths[mb][ps]['path'].message(mess[0], mess[1],  mess[2]):
+                        if self.parent.transfer_msg(mess[0], mess[1],  mess[2],  self.tpaths[mb][ps]['path']):
                             msg_sent = 1
                             self.tpaths_lock.acquire()
                             self.tpaths[mb][ps]['ok'] = 1
                             self.tpaths_lock.release()
-                            print(mb, ps)
         if msg_sent == 0:
             self.queuelock.acquire()
             tup = mess[0], mess[1],  mess[2]

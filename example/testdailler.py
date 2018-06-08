@@ -2,9 +2,15 @@
 # Test dialler to show use of dc09_msg class
 # (c 2018 van Ovost Automatisering b.v.
 # Author : Jacq. van Ovost
-# all rights reserved
 # ----------------------------
-from dc09_spt import *
+from dc09_spt import dc09_spt
+
+import logging
+logging.basicConfig(format='%(module)-12s %(asctime)s %(levelname)-8s %(message)s')
+logger = logging.getLogger()
+#handler = logging.StreamHandler()
+#logger.addHandler(handler)
+logger.setLevel(logging.DEBUG)
 
 """
     Copyright (c) 2018  van Ovost Automatisering b.v.
@@ -25,7 +31,7 @@ from dc09_spt import *
 
 key1 = b"\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12"
 prom1 = "0123"
-spt1 = dc09_spt(prom1)
+spt1 = dc09_spt.dc09_spt(prom1)
 spt1.set_path('main', 'primary', "welsum.ovost.nl", 12132,  prom1, key = key1)
 spt1.set_path('main', 'secondary', "ovost.eu", 12132,  prom1, key=key1)
 spt1.start_poll(890, ok_msg={'code':  'YK'},  fail_msg={'code':  'YS'})
@@ -35,7 +41,7 @@ spt1.start_routine([{'start':  10.10,  'interval':  7200,  'time':  'now', 'type
 
 key2 = b"\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34"
 prom2="1234"
-spt2 = dc09_spt(prom2)
+spt2 = dc09_spt.dc09_spt(prom2)
 spt2.set_path('main', 'primary',"welsum.ovost.nl", 12128,  prom2, key=key2)
 spt2.set_path('main', 'secondary', "ovost.eu", 12128,  prom2, key=key2)
 spt2.set_path('back-up', 'primary',"ovost.eu", 12129,  prom2, key=key2)
