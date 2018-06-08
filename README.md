@@ -90,12 +90,10 @@ spt.send_msg('ADM-CID', {'account':  '124',  'code': 400, 'q': 1, 'zone': 14})
 This is the first upload of these classes. In my tests they work, but some work is still planned for the near future:
 
 ## To Do
-1. replace a few print statements by logging (to a file)
-2. check the exceptions and make them report consistently
-3. complete the package for upload to Pipi
-4. extend documentation and comments
-5. extend the dc03_msg class to handle all keys defined in the DC03 standard. (this subset sould be enough for over 90% of the use cases though)
-6. extend the dc09_msg class with the extensions of the SIA-DC09 2013 version
+1. complete the package for upload to Pipi
+2. extend documentation and comments
+3. extend the dc03_msg class to handle all keys defined in the DC03 standard. (this subset sould be enough for over 90% of the use cases though)
+4. extend the dc09_msg class with the extensions of the SIA-DC09 2013 version
 
 
 
