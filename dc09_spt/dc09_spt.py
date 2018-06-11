@@ -271,7 +271,7 @@ class dc09_spt():
             true if message is transferred correct
         """
         ret = 0
-        dc09 = dc09_msg(path.account, path.key, path.receiver, path.line, path.offset)
+        dc09 = dc09_msg(path.get_account(), path.get_key(), path.get_receiver(), path.get_line(), path.get_offset())
         mesg = str.encode(dc09.dc09block(msg_nr, type,  message))
         conn = path.connect()
         if conn != None:
@@ -372,14 +372,11 @@ class poll_thread(threading.Thread):
             main_polled = 0
             back_up_for_main = 0
             backup_polled = 0
-            dc09 = dc09_msg(self.account)
-            msg = dc09.dc09poll()
             if self.main_poll != None and self.main_poll_next <= now:
                 for ps in ('primary',  'secondary'):
                     if first or main_polled == 0:
                         if self.tpaths['main'][ps]['path'] != None:
-#                            if self.tpaths['main'][ps]['path'].transfer(msg):
-                            if self.parent.transfer_msg(0,  "NULL",  msg, self.tpaths['main'][ps]['path']):
+                            if self.parent.transfer_msg(0,  "NULL", "]", self.tpaths['main'][ps]['path']):
                                 main_polled = 1
                                 self.counter += 1
                                 if self.tpaths['main'][ps]['ok'] != 1:
@@ -409,8 +406,7 @@ class poll_thread(threading.Thread):
                 for ps in ('primary',  'secondary'):
                     if first or backup_polled == 0:
                         if self.tpaths['back-up'][ps]['path'] != None:
-                            if self.parent.transfer_msg(0,  "NULL",  msg, self.tpaths['main'][ps]['path']):
-#                            if self.tpaths['back-up'][ps]['path'].poll():
+                            if self.parent.transfer_msg(0,  "NULL",  "]", self.tpaths['main'][ps]['path']):
                                 backup_polled = 1
                                 self.counter += 1
                                 if self.tpaths['back-up'][ps]['ok'] != 1:

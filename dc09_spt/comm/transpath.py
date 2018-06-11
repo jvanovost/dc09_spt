@@ -20,7 +20,7 @@ class TransPath:
         self.receiver = receiver
         self.type = type.lower()
         self.account = account
-        self.key = receiver
+        self.key = key
         self.line = line
 
     def set_offset(self, offset):
@@ -37,6 +37,9 @@ class TransPath:
 
     def get_line(self):
         return self.line
+        
+    def get_account(self):
+        return self.account
 
     def connect(self):
         if self.type == 'tcp':
