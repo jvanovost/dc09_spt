@@ -41,6 +41,21 @@ class TransPathTCP:
                 logging.error('TCP receive message from host %s port %s exception %s',  self.host, self.port, e)
         return antw
 
+    def sendAndReceive(self, msg, max_answ=1024):
+        antw = None
+        if self.s != None:
+            try:
+                self.s.send(msg)
+            except Exception as e:
+                self.s = None
+                logging.error('TCP send message to host %s port %s exception %s',  self.host, self.port, e)
+            try:
+                antw=self.s.recv(max_answ)
+            except Exception as e:
+                self.s = None
+                logging.error('TCP receive message from host %s port %s exception %s',  self.host, self.port, e)
+        return antw
+
     def disconnect(self):
         if self.s != None:
             self.s.close()

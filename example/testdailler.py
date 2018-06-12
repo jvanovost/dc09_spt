@@ -32,8 +32,8 @@ logger.setLevel(logging.DEBUG)
 key1 = b"\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12"
 prom1 = "0123"
 spt1 = dc09_spt.dc09_spt(prom1)
-spt1.set_path('main', 'primary', "welsum.ovost.nl", 12132,  prom1, key = key1)
-spt1.set_path('main', 'secondary', "ovost.eu", 12132,  prom1, key=key1)
+spt1.set_path('main', 'primary', "welsum.ovost.nl", 12132, account=prom1, key = key1, type = 'UDP')
+spt1.set_path('main', 'secondary', "ovost.eu", 12132,  account=prom1, key=key1, type = 'UDP')
 spt1.start_poll(890, ok_msg={'code':  'YK'},  fail_msg={'code':  'YS'})
 spt1.send_msg('SIA-DCS', {'code':'RR','text': 'Start of dialler'})
 spt1.start_routine([{'start':  10.10,  'interval':  7200,  'time':  'now', 'type': 'SIA-DCS',  'code':  'RP'}, 
@@ -42,10 +42,10 @@ spt1.start_routine([{'start':  10.10,  'interval':  7200,  'time':  'now', 'type
 key2 = b"\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34"
 prom2="1234"
 spt2 = dc09_spt.dc09_spt(prom2)
-spt2.set_path('main', 'primary',"welsum.ovost.nl", 12128,  prom2, key=key2)
-spt2.set_path('main', 'secondary', "ovost.eu", 12128,  prom2, key=key2)
-spt2.set_path('back-up', 'primary',"ovost.eu", 12129,  prom2, key=key2)
-spt2.set_path('back-up', 'secondary', "welsum.ovost.nl", 12129,  prom2, key=key2)
+spt2.set_path('main', 'primary',"welsum.ovost.nl", 12128,  account=prom2, key=key2, type = 'UDP')
+spt2.set_path('main', 'secondary', "ovost.eu", 12128,  account=prom2, key=key2, type = 'UDP')
+spt2.set_path('back-up', 'primary',"ovost.eu", 12129,  account=prom2, key=key2)
+spt2.set_path('back-up', 'secondary', "welsum.ovost.nl", 12129,  account=prom2, key=key2)
 spt2.start_poll(85, 890,  ok_msg={'code':  '350'},  fail_msg={'code':  '350'})
 spt2.send_msg('SIA-DCS', {'code':'RR','text': 'Start of dialler'})
 spt2.send_msg('ADM-CID', {'account':  '124',  'code': 503, 'q': 1})
@@ -53,6 +53,10 @@ spt2.send_msg('ADM-CID', {'account':  '124',  'code': 503, 'q': 1})
 action = '0'
 
 while action != '9':
+    if spt1.isConnected():
+        print('SPT1 connected')
+    if spt2.isConnected():
+        print('SPT2 connected')
     print(spt1.state())
     print(spt2.state())
     print ("What do we do ?\n 1 = open,\n 2 = close,\n 3 = burglary alarm,\n 4 = burglary restore,\n 5 = burglary trouble,\n 6 = trouble restore,\n 7 = start poll,\n 8 = stop poll,\n 9 = stop")

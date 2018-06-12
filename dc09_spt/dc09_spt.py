@@ -89,7 +89,7 @@ class dc09_spt():
 # ---------------------
 # configure transmission paths
 # ---------------------
-    def set_path(self, mb,  pb,  host,  port,  account=None,  key=None,  receiver=None,  line=None):
+    def set_path(self, mb,  pb,  host,  port,  *,  account=None,  key=None,  receiver=None,  line=None,  type=None):
         """
         Define the transmission path 
         
@@ -135,7 +135,7 @@ class dc09_spt():
         else:
             lin = self.line
         self.tpaths_lock.acquire()
-        self.tpaths[mb][pb]['path'] = TransPath(host,  port,  acc,  key,  rec,  lin)
+        self.tpaths[mb][pb]['path'] = TransPath(host,  port,  acc, key=key, receiver=rec, line=lin,  type=type)
         self.tpaths[mb][pb]['ok'] = 0
         self.tpaths_lock.release()
             
@@ -256,7 +256,19 @@ class dc09_spt():
         if self.send != None:
             ret['send active'] = self.send.active()
         return ret
-        
+
+    def isConnected(self):
+        antw = False
+        for mb in ('main',  'back-up'):
+            for ps in ('primary',  'secondary'):
+                if self.tpaths[mb][ps]['path'] != None:
+                    if self.tpaths[mb][ps]['ok']  > 0:
+                        antw = True
+        return antw
+    
+    def notSent(self):
+        return len(self.queue)
+
     def transfer_msg(self,  msg_nr,  type,  message,  path):
         """
         Transfer a message and decode the answer
@@ -275,8 +287,7 @@ class dc09_spt():
         mesg = str.encode(dc09.dc09block(msg_nr, type,  message))
         conn = path.connect()
         if conn != None:
-            conn.send(mesg)
-            antw = conn.receive(1024)
+            antw = conn.sendAndReceive(mesg,  512)
             if antw != None:
                 res = dc09.dc09answer(msg_nr,  antw.decode())
                 if res != None:

@@ -18,26 +18,51 @@ class TransPathUDP:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.s.settimeout(self.timeout)
         except Exception as e:
-            s = None
+            self.s = None
             logging.error('UDP Socket creation exception %s',  e)
-        return s
+        return self.s
         
     def send(self, msg):
         if self.s != None:
             try:
-                cmsg = str.encode(msg)
-                self.s.sendto(cmsg, (self.host, self.port))
+                self.s.sendto(msg, (self.host, self.port))
             except Exception as e:
                 self.s = None
                 logging.error('UDP send message to host %s port %s exception %s',  self.host,  self.port,  e)
     
     def receive(self, length=1024):
+        antw = None
         if self.s != None:
             try:
-                antw=self.s.recvfrom(length)
+                antw,  sender =self.s.recvfrom(length)
             except Exception as e:
                 self.s = None
                 logging.error('UDP receive message from host %s port %s exception %s',  self.host,  self.port,  e)
+        return antw
+
+    def sendAndReceive(self, msg,  max_antw=1024):
+        antw = None
+        if self.s != None:
+            try:
+                self.s.settimeout(self.timeout / 5)
+                for x in range(5):
+                    try:
+                        self.s.sendto(msg, (self.host, self.port))
+                        antw,  sender = self.s.recvfrom(max_antw)
+                        if sender[1] != self.port:
+                           antw=None 
+                    except Exception as e:
+                        if e != TimeoutError:
+                            raise
+                        else:
+                            pass
+                    else:
+                        break
+            except Exception as e:
+                self.s = None
+                logging.error('UDP message exchange to host %s port %s exception %s',  self.host,  self.port,  e)
+            if antw == None:
+                logging.error('UDP message exchange to host %s port %s timeout',  self.host,  self.port )
         return antw
 
     def disconnect(self):

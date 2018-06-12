@@ -11,14 +11,17 @@ class TransPath:
     """
     Handle the basic tasks for establishing and maintaining a transmit path
     """
-    def __init__(self,  host,  port,  account,  key=None,  receiver=None,  line=None,  timeout=5.0,  type='tcp'):
+    def __init__(self,  host,  port,  account, *, key=None,  receiver=None,  line=None,  timeout=5.0,  type=None):
         self.path_ok = 0
         self.host = host
         self.port = port
         self.offset = 0
         self.timeout = timeout
         self.receiver = receiver
-        self.type = type.lower()
+        if type != None:
+            self.type = type.lower()
+        else:
+            self.type='tcp'
         self.account = account
         self.key = key
         self.line = line
