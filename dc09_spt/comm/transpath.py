@@ -18,7 +18,7 @@ class TransPath:
         self.offset = 0
         self.timeout = timeout
         self.receiver = receiver
-        if type != None:
+        if type is not None:
             self.type = type.lower()
         else:
             self.type='tcp'
@@ -52,12 +52,12 @@ class TransPath:
         else:
             conn = None
             logging.error('Undefined connection type : %s',  self.type)
-        if conn != None:
+        if conn is not None:
             conn.connect()
         return conn
         
     def disconnect(self,  conn):
-        if conn != None:
+        if conn is not None:
             conn.disconnect()
 
 # --------------------------

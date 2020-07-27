@@ -23,7 +23,7 @@ class TransPathUDP:
         return self.s
         
     def send(self, msg):
-        if self.s != None:
+        if self.s is not None:
             try:
                 self.s.sendto(msg, (self.host, self.port))
             except Exception as e:
@@ -32,7 +32,7 @@ class TransPathUDP:
     
     def receive(self, length=1024):
         antw = None
-        if self.s != None:
+        if self.s is not None:
             try:
                 antw,  sender =self.s.recvfrom(length)
             except Exception as e:
@@ -42,7 +42,7 @@ class TransPathUDP:
 
     def sendAndReceive(self, msg,  max_antw=1024):
         antw = None
-        if self.s != None:
+        if self.s is not None:
             try:
                 self.s.settimeout(self.timeout / 5)
                 for x in range(5):
@@ -61,12 +61,12 @@ class TransPathUDP:
             except Exception as e:
                 self.s = None
                 logging.error('UDP message exchange to host %s port %s exception %s',  self.host,  self.port,  e)
-            if antw == None:
+            if antw is None:
                 logging.error('UDP message exchange to host %s port %s timeout',  self.host,  self.port )
         return antw
 
     def disconnect(self):
-        if self.s != None:
+        if self.s is not None:
             self.s.close()
             self.s=None
 

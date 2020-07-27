@@ -79,7 +79,7 @@ class dc03_msg:
             spt_account
                 the account of the alarm transceiver.
                 in most situations this will be used in the alarm message too, but for situations like a cloud based receiver,
-                there will be adifferent account id in the params map.
+                there will be a different account id in the params map.
             params
                 a map with key-value pairs.
                 at this moment only the more commonly used fields are used.
@@ -113,27 +113,27 @@ class dc03_msg:
         zone = param.numpar(params,'zone')
         user = param.numpar(params,  'user')
         msg = ''
-        if account == None:
+        if account is None:
             msg += '#' + self.account + '|'
         else:
             msg += '#' + account + '|'
         code = param.strpar(params,  'code', None)
         text = param.strpar(params,  'text', None)
         flavor = param.strpar(params,  'flavor', None)
-        if (code == None or code == 'A') and text != None:
+        if (code is None or code == 'A') and text is not None:
             msg += 'A' + text
-            if zone != None or area != None or zone != None or user != None:
+            if zone is not None or area is not None or zone is not None or user is not None:
                 logging.warning("Text message can not contain zone, area or user id's")
         else:
             msg += 'N'
-            if code == None:
+            if code is None:
                 code = 'RP'
-            if area != None:
+            if area is not None:
                 if not dc03_codes.dc03_is_area(code):
                     msg += 'ri' + area
                     if 'areaname' in params:
                         msg += '^' + params['areaname'] + '^'
-            if user != None:
+            if user is not None:
                 if not dc03_codes.dc03_is_user(code):
                     msg += 'id' + user
                     if 'username' in params:
@@ -145,21 +145,21 @@ class dc03_msg:
                 msg += 'ti' + timep
             msg += code
             if dc03_codes.dc03_is_user(code):
-                if user != None:
+                if user is not None:
                     msg += user
-                if zone != None:
+                if zone is not None:
                     logging.warning('Zone %s not included in message because code %s is user related',  zone,  code)
-            elif dc03_codes.dc03_is_area(code) and area != None:
-                if area != None:
+            elif dc03_codes.dc03_is_area(code) and area is not None:
+                if area is not None:
                     msg += area
-                if zone != None:
+                if zone is not None:
                     logging.warning('Zone %s not included in message because code %s is area related',  zone,  code)
             else:
-                if zone != None:
+                if zone is not None:
                     msg += zone
                     if 'zonename' in params:
                         msg += '^' + params['zonename'] + '^'
-            if text != None:
+            if text is not None:
                 if flavor == 'xsia':
                     msg += '*"' + text + '"NM'
                 else:

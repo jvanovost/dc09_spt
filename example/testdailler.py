@@ -3,6 +3,8 @@
 # (c 2018 van Ovost Automatisering b.v.
 # Author : Jacq. van Ovost
 # ----------------------------
+import sys
+sys.path.append('../')
 from dc09_spt import dc09_spt
 
 import logging
@@ -29,9 +31,14 @@ logger.setLevel(logging.DEBUG)
 
 """
 
+def callback(type, data):
+    print("Callback type " + type + " data :")
+    print(data)
+
 key1 = b"\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12"
 prom1 = "0123"
 spt1 = dc09_spt.dc09_spt(prom1)
+spt1.set_callback(callback)
 spt1.set_path('main', 'primary', "welsum.ovost.nl", 12132, account=prom1, key = key1, type = 'UDP')
 spt1.set_path('main', 'secondary', "ovost.eu", 12132,  account=prom1, key=key1, type = 'UDP')
 spt1.start_poll(890, ok_msg={'code':  'YK'},  fail_msg={'code':  'YS'})

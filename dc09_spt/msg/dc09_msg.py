@@ -59,7 +59,7 @@ class dc09_msg:
         self.receiver = receiver
         self.line = line
         self.offset=offset
-        if self.key != None and len(self.key) != 16 and len(self.key) != 32:
+        if self.key is not None and len(self.key) != 16 and len(self.key) != 32:
             raise Exception('Keylength is {} but must be either 16 or 32'.format(len(key)))
     
     @staticmethod
@@ -133,12 +133,12 @@ class dc09_msg:
         else :
             ret = '"*' + dc09type + '"'
         ret += '{0:04X}'.format(msg_nr)
-        if self.receiver != None:
+        if self.receiver is not None:
             ret += 'R{0:X}'.format(self.receiver)
-        if self.line != None:
+        if self.line is not None:
             ret += 'L{0:X}'.format(self.line)
         ret += '#' + self.account + '['
-        if self.key==None:
+        if self.key is None:
             ret += msg
         else:
             if type != "NULL":
@@ -203,7 +203,7 @@ class dc09_msg:
             tm = answer[-20:-1]
         if len(answer) > 20 and answer[-21:-19] == ']_':
             tm = answer[-19:]
-        if tm != None:
+        if tm is not None:
             now = datetime.datetime.utcnow()
             receivertime = datetime.datetime.strptime(tm, "%H:%M:%S,%m-%d-%Y")
             offset = (receivertime-now).total_seconds()

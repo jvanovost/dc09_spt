@@ -24,7 +24,7 @@ class TransPathTCP:
         return self.s
         
     def send(self, msg):
-        if self.s != None:
+        if self.s is not None:
             try:
                 self.s.send(msg)
             except Exception as e:
@@ -33,7 +33,7 @@ class TransPathTCP:
     
     def receive(self, length=1024):
         antw = None
-        if self.s != None:
+        if self.s is not None:
             try:
                 antw=self.s.recv(length)
             except Exception as e:
@@ -43,7 +43,7 @@ class TransPathTCP:
 
     def sendAndReceive(self, msg, max_answ=1024):
         antw = None
-        if self.s != None:
+        if self.s is not None:
             try:
                 self.s.send(msg)
             except Exception as e:
@@ -57,6 +57,6 @@ class TransPathTCP:
         return antw
 
     def disconnect(self):
-        if self.s != None:
+        if self.s is not None:
             self.s.close()
             self.s=None
