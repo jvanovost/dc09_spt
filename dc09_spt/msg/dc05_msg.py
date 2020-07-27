@@ -71,8 +71,8 @@ class dc05_msg:
         zone = param.numpar(params,'zone',  '000')
         user = param.numpar(params,'user',  None)
         msg = ''
-        if account == None:
-            msg += '#' + self.account + '|'
+        if account is None:
+            msg += '#0000|'
         else:
             msg += '#' + account + '|'
         code = param.numpar(params,  'code',  '602')

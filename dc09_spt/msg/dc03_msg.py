@@ -114,7 +114,7 @@ class dc03_msg:
         user = param.numpar(params,  'user')
         msg = ''
         if account is None:
-            msg += '#' + self.account + '|'
+            msg += '#0000|'
         else:
             msg += '#' + account + '|'
         code = param.strpar(params,  'code', None)
