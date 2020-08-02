@@ -7,12 +7,12 @@ import logging
 from dc09_spt.comm.transpathtcp import TransPathTCP
 from dc09_spt.comm.transpathudp import TransPathUDP
 
+
 class TransPath:
     """
     Handle the basic tasks for establishing and maintaining a transmit path
     """
     def __init__(self,  host,  port,  account, *, key=None,  receiver=None,  line=None,  timeout=5.0,  type=None):
-        self.path_ok = 0
         self.host = host
         self.port = port
         self.offset = 0
@@ -21,7 +21,7 @@ class TransPath:
         if type is not None:
             self.type = type.lower()
         else:
-            self.type='tcp'
+            self.type = 'tcp'
         self.account = account
         self.key = key
         self.line = line
@@ -56,14 +56,7 @@ class TransPath:
             conn.connect()
         return conn
         
-    def disconnect(self,  conn):
+    @staticmethod
+    def disconnect(conn):
         if conn is not None:
             conn.disconnect()
-
-# --------------------------
-# return path status
-# ----------------------
-    def ok(self):
-        return self.path_ok
-        
-

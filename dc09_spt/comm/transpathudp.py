@@ -6,6 +6,7 @@
 import socket
 import logging
 
+
 class TransPathUDP:
     def __init__(self, host, port,  timeout=5):
         self.host = host
@@ -34,7 +35,7 @@ class TransPathUDP:
         antw = None
         if self.s is not None:
             try:
-                antw,  sender =self.s.recvfrom(length)
+                antw,  sender = self.s.recvfrom(length)
             except Exception as e:
                 self.s = None
                 logging.error('UDP receive message from host %s port %s exception %s',  self.host,  self.port,  e)
@@ -50,7 +51,7 @@ class TransPathUDP:
                         self.s.sendto(msg, (self.host, self.port))
                         antw,  sender = self.s.recvfrom(max_antw)
                         if sender[1] != self.port:
-                           antw=None 
+                            antw = None
                     except Exception as e:
                         if e != TimeoutError:
                             raise
@@ -62,11 +63,10 @@ class TransPathUDP:
                 self.s = None
                 logging.error('UDP message exchange to host %s port %s exception %s',  self.host,  self.port,  e)
             if antw is None:
-                logging.error('UDP message exchange to host %s port %s timeout',  self.host,  self.port )
+                logging.error('UDP message exchange to host %s port %s timeout',  self.host,  self.port)
         return antw
 
     def disconnect(self):
         if self.s is not None:
             self.s.close()
-            self.s=None
-
+            self.s = None

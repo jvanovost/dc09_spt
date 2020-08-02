@@ -6,6 +6,7 @@
 import socket
 import logging
 
+
 class TransPathTCP:
     def __init__(self, host, port,  timeout=5):
         self.host = host
@@ -35,7 +36,7 @@ class TransPathTCP:
         antw = None
         if self.s is not None:
             try:
-                antw=self.s.recv(length)
+                antw = self.s.recv(length)
             except Exception as e:
                 self.s = None
                 logging.error('TCP receive message from host %s port %s exception %s',  self.host, self.port, e)
@@ -50,7 +51,7 @@ class TransPathTCP:
                 self.s = None
                 logging.error('TCP send message to host %s port %s exception %s',  self.host, self.port, e)
             try:
-                antw=self.s.recv(max_answ)
+                antw = self.s.recv(max_answ)
             except Exception as e:
                 self.s = None
                 logging.error('TCP receive message from host %s port %s exception %s',  self.host, self.port, e)
@@ -59,4 +60,4 @@ class TransPathTCP:
     def disconnect(self):
         if self.s is not None:
             self.s.close()
-            self.s=None
+            self.s = None

@@ -21,8 +21,8 @@ class param:
     # ------------------------------
     @staticmethod
     def numpar(map,  name,  default=None):
-        res=map.get(name, default)
-        if res != None:
+        res = map.get(name, default)
+        if res is not None:
             if not isinstance(res, str):
                 res = str(res)
             if not res.isdigit():
@@ -31,8 +31,8 @@ class param:
 
     @staticmethod
     def strpar(map,  name,  default=None):
-        res=map.get(name, default)
-        if res != None:
+        res = map.get(name, default)
+        if res is not None:
             if not isinstance(res, str):
                 res = str(res)
         return res

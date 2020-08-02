@@ -13,7 +13,7 @@ import logging
 from dc09_spt.comm.transpath import TransPath
 
 
-class dc09_spt():
+class dc09_spt:
     """
     Handle the basic tasks of SPT (Secured Premises Transciever)
 
@@ -73,14 +73,14 @@ class dc09_spt():
         self.tpaths_lock = threading.Lock()
         self.backup_prim = None
         self.backup_sec = None
-        self.main_ok = 0
-        self.backup_ok = 0
+        self.main_ok = False
+        self.backup_ok = False
         self.main_poll = None
         self.backup_poll = None
         self.msg_nr = 0
         self.queue = deque()
         self.queuelock = threading.Lock()
-        self.running = 0
+        self.running = False
         self.poll = None
         self.send = None
         self.counter = 0
@@ -116,7 +116,7 @@ class dc09_spt():
                 an optional integer to be used as receiver number in the block header
             line
                 an optional integer to be used as line number in the block header
-            type
+            ptype
                 TCP or UDP
         note
             The routing of the back-up path to use the secondary network adapter has to be done
@@ -208,17 +208,17 @@ class dc09_spt():
             self.poll_active = 0
             self.poll = None
 
-    def start_routine(self, list):
+    def start_routine(self, rlist):
         if self.poll is None:
-            if len(list):
+            if len(rlist):
                 self.poll = poll_thread(self.account, self.receiver, self.line, self.tpaths, self.tpaths_lock, 5.0,
                                         self)
-                self.poll.set_routines(list)
+                self.poll.set_routines(rlist)
                 self.poll_active = 1
                 self.poll.start()
         else:
-            self.poll.set_routines(list)
-            if len(list) == 0:
+            self.poll.set_routines(rlist)
+            if len(rlist) == 0:
                 if self.poll.active() == 2:
                     self.poll.stop()
                     self.poll_active = -1
@@ -226,17 +226,17 @@ class dc09_spt():
                     self.poll_active = 0
                     self.poll = None
 
-    def send_msg(self, type, param):
+    def send_msg(self, mtype, mparam):
         """
         Schedule a message for sending to the receiver
         
         parameters
-            type    
+            mtype
                 type of message to send
                 current implemented is :
                     'SIA' or 'SIA-DCS' for sending a message with a SIA-DC03 payload
                     'CID' or 'ADM-CID' for sending a message with a SIA-DC05 payload
-            param  
+            mparam
                 a map of key value pairs defining the message content.
                 for a description of possible values see the documentation of the payload
         
@@ -251,13 +251,13 @@ class dc09_spt():
         self.counterlock.release()
         if self.msg_nr > 9999:
             self.msg_nr = 1
-        if type == 'SIA' or type == 'SIA-DCS':
-            msg = dc03_msg.dc03event(self.account, param)
+        if mtype == 'SIA' or mtype == 'SIA-DCS':
+            msg = dc03_msg.dc03event(self.account, mparam)
             dc09type = 'SIA-DCS'
-        if type == 'CID' or type == 'ADM-CID':
-            msg = dc05_msg.dc05event(self.account, param)
+        if mtype == 'CID' or mtype == 'ADM-CID':
+            msg = dc05_msg.dc05event(self.account, mparam)
             dc09type = 'ADM-CID'
-        extra = dc09_msg.dc09_extra(param)
+        extra = dc09_msg.dc09_extra(mparam)
         if extra is not None:
             msg = msg + extra
         tup = self.msg_nr, dc09type, msg
@@ -315,7 +315,7 @@ class dc09_spt():
         antw = False
         for mb in ('main', 'back-up'):
             for ps in ('primary', 'secondary'):
-                if self.tpaths[mb][ps]['path'] != None:
+                if self.tpaths[mb][ps]['path'] is not None:
                     if self.tpaths[mb][ps]['ok'] > 0:
                         antw = True
         return antw
@@ -324,7 +324,7 @@ class dc09_spt():
         """Returns the number of messages in the send queue"""
         return len(self.queue)
 
-    def transfer_msg(self, msg_nr, type, message, path):
+    def transfer_msg(self, msg_nr, mtype, message, path):
         """
         Transfer a message and decode the answer
         if needed repeat with correct time offset
@@ -337,9 +337,9 @@ class dc09_spt():
         return value
             true if message is transferred correct
         """
-        ret = 0
+        ret = False
         dc09 = dc09_msg(path.get_account(), path.get_key(), path.get_receiver(), path.get_line(), path.get_offset())
-        mesg = str.encode(dc09.dc09block(msg_nr, type, message))
+        mesg = str.encode(dc09.dc09block(msg_nr, mtype, message))
         conn = path.connect()
         if conn is not None:
             antw = conn.sendAndReceive(mesg, 512)
@@ -349,14 +349,14 @@ class dc09_spt():
                     path.set_offset(res[1])
                     if res[0] == 'NAK':
                         dc09.set_offset(res[1])
-                        mesg = str.encode(dc09.dc09block(msg_nr, type, msg))
+                        mesg = str.encode(dc09.dc09block(msg_nr, mtype, message))
                         conn.send(mesg)
                         antw = conn.receive(1024)
                         if antw is not None:
                             res = dc09.dc09answer(self.msg_nr, antw)
                     if res[0] == 'ACK':
-                        ret = 1
-            logging.debug('Sent message nr %s type %s content %s to %s port %s answer %s', msg_nr, type, message,
+                        ret = True
+            logging.debug('Sent message nr %s mtype %s content %s to %s port %s answer %s', msg_nr, mtype, message,
                           path.host, path.port, antw)
         if conn is not None:
             conn.disconnect()
@@ -400,6 +400,17 @@ class poll_thread(threading.Thread):
         self.main_poll = None
         self.backup_poll = None
         self.routines = []
+        self.ok_msg = None
+        self.fail_msg = None
+        self.main_poll_next = 0
+        self.backup_poll_next = 0
+        self.main_poll_ok = False
+        self.backup_poll_ok = False
+        self.counter = 0
+        self.routine_nexts = []
+        self.running = False
+        self.backup_ok = False
+        self.main_ok = False
 
     def set_poll(self, main, backup, ok_msg, fail_msg):
         """
@@ -419,11 +430,6 @@ class poll_thread(threading.Thread):
         self.backup_poll = backup
         self.ok_msg = ok_msg
         self.fail_msg = fail_msg
-        self.main_poll_next = 0
-        self.backup_poll_next = 0
-        self.main_poll_ok = 0
-        self.backup_poll_ok = 0
-        self.counter = 0
 
     def set_routines(self, routines):
         """
@@ -439,7 +445,6 @@ class poll_thread(threading.Thread):
 
         """
         self.routines = routines
-        self.routine_nexts = []
         now = time.time()
         for routine in self.routines:
             if 'interval' in routine:
@@ -459,23 +464,23 @@ class poll_thread(threading.Thread):
     # at first run check all paths
     # ------------------
     def run(self):
-        first = 1
+        first = True
         while self.main_poll or self.backup_poll or len(self.routines) > 0:
             # on first poll check validity of all paths
-            self.running = 1
+            self.running = True
             now = time.time()
             # ---------------
             # main poll 
             # ---------------
-            main_polled = 0
-            back_up_for_main = 0
-            backup_polled = 0
-            if self.main_poll != None and self.main_poll_next <= now:
+            main_polled = False
+            back_up_for_main = False
+            backup_polled = False
+            if self.main_poll is not None and self.main_poll_next <= now:
                 for ps in ('primary', 'secondary'):
-                    if first or main_polled == 0:
-                        if self.tpaths['main'][ps]['path'] != None:
+                    if first or not main_polled:
+                        if self.tpaths['main'][ps]['path'] is not None:
                             if self.parent.transfer_msg(0, "NULL", "]", self.tpaths['main'][ps]['path']):
-                                main_polled = 1
+                                main_polled = True
                                 self.counter += 1
                                 if self.tpaths['main'][ps]['ok'] != 1:
                                     self.tpaths_lock.acquire()
@@ -488,23 +493,23 @@ class poll_thread(threading.Thread):
                                     self.tpaths['main'][ps]['ok'] = 0
                                     self.tpaths_lock.release()
                                     self.msg(self.fail_msg, 1, 0)
-                if main_polled == 0:
-                    self.main_poll_ok = 0
-                    self.main_ok = 0
-                    back_up_for_main = 1
+                if not main_polled:
+                    self.main_poll_ok = False
+                    self.main_ok = False
+                    back_up_for_main = True
                 else:
-                    self.main_poll_ok = 1
-                    self.main_ok = 1
+                    self.main_poll_ok = True
+                    self.main_ok = True
                     self.main_poll_next = now + self.main_poll
             # ---------------
             # backup poll 
             # also triggered when main poll failed 
             # ---------------
-            if self.backup_poll != None and (self.main_poll_next <= now or self.backup_poll_next <= now):
+            if self.backup_poll is not None and (self.main_poll_next <= now or self.backup_poll_next <= now or first):
                 for ps in ('primary', 'secondary'):
                     if first or backup_polled == 0:
-                        if self.tpaths['back-up'][ps]['path'] != None:
-                            if self.parent.transfer_msg(0, "NULL", "]", self.tpaths['main'][ps]['path']):
+                        if self.tpaths['back-up'][ps]['path'] is not None:
+                            if self.parent.transfer_msg(0, "NULL", "]", self.tpaths['back-up'][ps]['path']):
                                 backup_polled = 1
                                 self.counter += 1
                                 if self.tpaths['back-up'][ps]['ok'] != 1:
@@ -518,19 +523,19 @@ class poll_thread(threading.Thread):
                                     self.tpaths['back-up'][ps]['ok'] = 0
                                     self.tpaths_lock.release()
                                     self.msg(self.fail_msg, 2, 0)
-                if backup_polled == 0:
-                    self.backup_poll_ok = 0
-                    self.backup_ok = 0
+                if not backup_polled:
+                    self.backup_poll_ok = False
+                    self.backup_ok = False
                 else:
-                    self.backup_poll_ok = 1
-                    self.backup_ok = 1
+                    self.backup_poll_ok = True
+                    self.backup_ok = True
                     self.backup_poll_next = now + self.backup_poll
             if self.main_poll is not None and main_polled and (self.backup_poll is None or backup_polled):
-                first = 0
+                first = False
             # -----------------
             # schedule retry of main
             # -----------------
-            if main_polled != 0 or (back_up_for_main and backup_polled):
+            if main_polled or (back_up_for_main and backup_polled):
                 if self.main_poll is not None and self.main_poll_next < now:
                     self.main_poll_next = now + self.main_poll
             # ------------------------------
@@ -547,26 +552,27 @@ class poll_thread(threading.Thread):
         """
         Send a message on poll state change
         """
-        if msg != None:
+        if msg is not None:
             nmsg = msg
             nmsg['zone'] = ps
+            mtype = None
             if 'type' in msg:
-                type = msg['type']
+                mtype = msg['type']
             else:
                 if 'code' in msg:
                     code = msg['code']
                     if len(code) == 3:
-                        type = 'ADM-CID'
+                        mtype = 'ADM-CID'
                         if ok:
                             nmsg['q'] = 1
                         else:
                             nmsg['q'] = 3
                     elif len(code) == 2:
-                        type = 'SIA-DCS'
-            if type is not None:
-                self.parent.send_msg(type, msg)
+                        mtype = 'SIA-DCS'
+            if mtype is not None:
+                self.parent.send_msg(mtype, msg)
                 if self.parent.get_callback() is not None:
-                    self.parent.get_callback()(type, msg)
+                    self.parent.get_callback()(mtype, msg)
 
     def stop(self):
         self.main_poll = None
@@ -590,17 +596,17 @@ class poll_thread(threading.Thread):
         for n, r in zip(self.routine_nexts, self.routines):
             if n <= now:
                 if 'type' in r:
-                    type = r['type']
+                    mtype = r['type']
                 else:
                     if 'code' in r:
                         code = r['code']
                         if len(code) == 3:
-                            type = 'ADM-CID'
+                            mtype = 'ADM-CID'
                         else:
-                            type = 'SIA-DCS'
+                            mtype = 'SIA-DCS'
                     else:
-                        type = 'SIA-DCS'
-                self.parent.send_msg(type, r)
+                        mtype = 'SIA-DCS'
+                self.parent.send_msg(mtype, r)
                 if 'interval' in r:
                     interval = r['interval']
                 else:
@@ -639,6 +645,7 @@ class event_thread(threading.Thread):
         self.tpaths_lock = tpaths_lock
         self.send_retry_delay = 0.5
         self.parent = parent
+        self.running = False
 
     # -----------------
     # send events while needed (call in thread)
@@ -649,7 +656,7 @@ class event_thread(threading.Thread):
             # --------------------
             # first handle queue
             # --------------------
-            self.running = 1
+            self.running = True
             sent = 1
             while sent and len(self.queue):
                 sent = self.send()
@@ -664,7 +671,7 @@ class event_thread(threading.Thread):
                 #            if next > now:
                 if len(self.queue):
                     time.sleep(self.send_retry_delay)
-        self.running = 0
+        self.running = False
 
     def send(self):
         self.queuelock.acquire()
@@ -673,7 +680,7 @@ class event_thread(threading.Thread):
             return
         mess = self.queue.popleft()
         self.queuelock.release()
-        msg_sent = 0
+        msg_sent = False
         # ---------------------------
         # first try known good paths
         # --------------------------
@@ -682,20 +689,20 @@ class event_thread(threading.Thread):
                 if msg_sent == 0 and self.tpaths[mb][ps]['path'] is not None:
                     if self.tpaths[mb][ps]['ok']:
                         if self.parent.transfer_msg(mess[0], mess[1], mess[2], self.tpaths[mb][ps]['path']):
-                            msg_sent = 1
+                            msg_sent = True
         # ---------------------------
         # then try all available paths
         # --------------------------
-        if msg_sent == 0:
+        if not msg_sent:
             for mb in ('main', 'back-up'):
                 for ps in ('primary', 'secondary'):
-                    if msg_sent == 0 and self.tpaths[mb][ps]['path'] is not None:
+                    if not msg_sent and self.tpaths[mb][ps]['path'] is not None:
                         if self.parent.transfer_msg(mess[0], mess[1], mess[2], self.tpaths[mb][ps]['path']):
-                            msg_sent = 1
+                            msg_sent = True
                             self.tpaths_lock.acquire()
                             self.tpaths[mb][ps]['ok'] = 1
                             self.tpaths_lock.release()
-        if msg_sent == 0:
+        if not msg_sent:
             self.queuelock.acquire()
             tup = mess[0], mess[1], mess[2]
             self.queue.appendleft(tup)

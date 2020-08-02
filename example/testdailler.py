@@ -43,7 +43,7 @@ spt1.set_path('main', 'primary', "welsum.ovost.nl", 12132, account=prom1, key = 
 spt1.set_path('main', 'secondary', "ovost.eu", 12132,  account=prom1, key=key1, type = 'UDP')
 spt1.start_poll(890, ok_msg={'code':  'YK'},  fail_msg={'code':  'YS'})
 spt1.send_msg('SIA-DCS', {'code':'RR','text': 'Start of dialler'})
-spt1.start_routine([{'start':  10.10,  'interval':  7200,  'time':  'now', 'type': 'SIA-DCS',  'code':  'RP'}, 
+spt1.start_routine([{'start':  10.10,  'interval':  7200,  'time':  'now', 'type': 'SIA-DCS',  'code':  'RP'},
     {'interval':  3600,  'type': 'SIA-DCS',  'code':  'RP',  'zone':  99,  'time':  'now'}])
 
 key2 = b"\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34\x56\x78\x90\x12\x34"

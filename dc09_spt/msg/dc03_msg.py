@@ -22,6 +22,8 @@ import logging
     See the License for the specific language governing permissions and
     limitations under the License.
 """
+
+
 class dc03_codes:
     """
     Some special codes
@@ -32,9 +34,9 @@ class dc03_codes:
         Codes that have the user number following the code.
         Note that there is no way to transfer a zone in the message
         """
-        codes_with_user = { "BC", "CE", "CF", "CJ", "CK", "CL", "CP", "CQ", "CR", "DA", "DB", "EE",
-            "JD", "JH", "JK", "JP", "JS", "JT", "JV", "JX", "JY", "JZ", "OC", "OH", "OJ", "OK", "OL", 
-            "OP", "OQ", "OR", "OT", "RX"}
+        codes_with_user = {"BC", "CE", "CF", "CJ", "CK", "CL", "CP", "CQ", "CR", "DA", "DB", "EE",
+                           "JD", "JH", "JK", "JP", "JS", "JT", "JV", "JX", "JY", "JZ", "OC", "OH", "OJ", "OK", "OL",
+                           "OP", "OQ", "OR", "OT", "RX"}
         return code in codes_with_user
 
     @staticmethod
@@ -44,7 +46,7 @@ class dc03_codes:
         Note that there is no way to transfer a zone in the message
         """
         codes_with_door = {"DC", "DD", "DE", "DF", "DG", "DH", "DI", "DJ", "DK", "DL", "DM", "DN", 
-            "DO", "DP", "DQ", "DR", "DS", "DV", "DW", "DX", "DY", "DZ"}
+                           "DO", "DP", "DQ", "DR", "DS", "DV", "DW", "DX", "DY", "DZ"}
         return code in codes_with_door
 
     @staticmethod
@@ -54,8 +56,9 @@ class dc03_codes:
         Note that there is no way to transfer a zone in the message
         """
         codes_with_area = {"BA", "CA", "CD", "CG", "CI", "CT", "CW", "FI", "FK", "JA", "JR", "NF", 
-            "NL", "NM", "OA", "OG", "OI"}
+                           "NL", "NM", "OA", "OG", "OI"}
         return code in codes_with_area
+
 
 class dc03_msg:
     """
@@ -78,8 +81,8 @@ class dc03_msg:
         Parameters
             spt_account
                 the account of the alarm transceiver.
-                in most situations this will be used in the alarm message too, but for situations like a cloud based receiver,
-                there will be a different account id in the params map.
+                in most situations this will be used in the alarm message too, but for situations like
+                a cloud based receiver, there will be a different account id in the params map.
             params
                 a map with key-value pairs.
                 at this moment only the more commonly used fields are used.
@@ -88,7 +91,8 @@ class dc03_msg:
                         the account number.
                         most receivers expect 4 to 8 numeric digits
                     area
-                        the area number in which the event happened (area is a part of an installation that can arm and disarm independantly)
+                        the area number in which the event happened
+                        (area is a part of an installation that can arm and disarm independently)
                     areaname
                         the name of the area.
                     zone
@@ -109,17 +113,17 @@ class dc03_msg:
             all name and text fields can only use ascii characters in the range space to '~' but except [ ] | ^ and /
         """
         account = param.strpar(params,  'account', spt_account)
-        area = param.numpar(params,  'area')
-        zone = param.numpar(params,'zone')
-        user = param.numpar(params,  'user')
+        area = param.numpar(params, 'area')
+        zone = param.numpar(params, 'zone')
+        user = param.numpar(params, 'user')
         msg = ''
         if account is None:
             msg += '#0000|'
         else:
             msg += '#' + account + '|'
-        code = param.strpar(params,  'code', None)
-        text = param.strpar(params,  'text', None)
-        flavor = param.strpar(params,  'flavor', None)
+        code = param.strpar(params, 'code', None)
+        text = param.strpar(params, 'text', None)
+        flavor = param.strpar(params, 'flavor', None)
         if (code is None or code == 'A') and text is not None:
             msg += 'A' + text
             if zone is not None or area is not None or zone is not None or user is not None:

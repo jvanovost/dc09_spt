@@ -7,6 +7,7 @@ import datetime
 import random
 from Crypto.Cipher import AES
 
+
 class dc09_msg:
     """
     SIA DC09 message block implementation
@@ -37,7 +38,7 @@ class dc09_msg:
     See the License for the specific language governing permissions and
     limitations under the License.
     """ 
-    def __init__(self, account,  key=None,  receiver=None,  line=None, offset=0 ):
+    def __init__(self, account,  key=None,  receiver=None,  line=None, offset=0):
         """
         dc09_msg class initialisator
        
@@ -58,7 +59,7 @@ class dc09_msg:
         self.key = key
         self.receiver = receiver
         self.line = line
-        self.offset=offset
+        self.offset = offset
         if self.key is not None and len(self.key) != 16 and len(self.key) != 32:
             raise Exception('Keylength is {} but must be either 16 or 32'.format(len(key)))
     
@@ -87,7 +88,7 @@ class dc09_msg:
         """
         crypt = ''
         pad = (len(data) + 21) % 16
-        for i in range (0, 17-pad):
+        for i in range(0, 17-pad):
             rnd = '['
             while rnd == '[' or rnd == ']' or rnd == '|':
                 rnd = chr(random.randint(20, 125))
@@ -95,7 +96,7 @@ class dc09_msg:
         now = datetime.datetime.utcnow()+datetime.timedelta(seconds=self.offset)
         crypt += data + '_{:%H:%M:%S,%m-%d-%Y}'.format(now)
         iv = 16 * chr(0)
-        encryption_suite = AES.new(self.key , AES.MODE_CBC, iv )
+        encryption_suite = AES.new(self.key, AES.MODE_CBC, iv)
         return encryption_suite.encrypt(crypt)
 
     def dc09decrypt(self,  data):
@@ -105,7 +106,7 @@ class dc09_msg:
         if len(data) % 16 != 0:
             raise Exception('Data length not a multiple of 16')
         iv = 16 * chr(0)
-        encryption_suite = AES.new(self.key , AES.MODE_CBC, iv )
+        encryption_suite = AES.new(self.key, AES.MODE_CBC, iv)
         return encryption_suite.decrypt(data)
 
     def dc09block(self,  msg_nr=0,  dc09type="NULL",  msg="]"):   
@@ -128,9 +129,9 @@ class dc09_msg:
                 
                 the payload may be extended with the extra data constructed with dc09_extra
         """
-        if self.key==None:
+        if self.key is None:
             ret = '"' + dc09type + '"'
-        else :
+        else:
             ret = '"*' + dc09type + '"'
         ret += '{0:04X}'.format(msg_nr)
         if self.receiver is not None:
@@ -143,7 +144,7 @@ class dc09_msg:
         else:
             if type != "NULL":
                 msg = '|' + msg
-            ret += self.dc09crypt( msg).hex().upper()
+            ret += self.dc09crypt(msg).hex().upper()
         ret = '\n' + '{0:04X}'.format(self.dc09crc(ret)) + '{0:04X}'.format(len(ret)) + ret + '\r'
         return ret
 
@@ -192,7 +193,7 @@ class dc09_msg:
             ret = answer[10:13]
         if mnr != msg_nr and ret != 'NAK':
             raise Exception("Invalid message number")
-        offset=None
+        offset = None
         if answer[10] == '*':
             bracket = answer.find('[')
             ct = bytes.fromhex(answer[bracket+1:alen-1])
@@ -236,4 +237,3 @@ class dc09_msg:
             extra += '[M' + params['mac'] + ']'
         if 'verification' in params:
             extra += '[V' + params['verification'] + ']'
-
