@@ -57,7 +57,10 @@ example :
 spt.set_path("main", "primary", "ovost.eu", 12128, "0123", key=None)
 ```
 
-Each spt can handle 4 paths, labeled main.primary, main.secundary, back-up.primary and back-up.secundary.
+Each spt can handle 4 paths, labeled main.primary, main.secondary, back-up.primary and back-up.secondary.
+The main path is for the main transmission path, where the fast poll message will be sent.
+Main.primary connects to the primary receiver, main.secondary to the secondary receiver.
+The back-up path will only be used if the main path is unavailable except for the slow poll to show its availability.
 
 ### set the polling frequency and messages for fail and restore
 Polling is defined in SIA-DC09 to show the communication path is available for transfer of events. The polling interval is, for Europe, defined in the EN-50136-1 norm.
@@ -90,9 +93,9 @@ spt.send_msg('ADM-CID', {'account':  '124',  'code': 400, 'q': 1, 'zone': 14})
 This is the first upload of these classes. In my tests they work, but some work is still planned for the near future:
 
 ## To Do
-1. complete the package for upload to Pipi
+~~1. complete the package for upload to Pipi~~
 2. extend documentation and comments
-3. extend the dc03_msg class to handle all keys defined in the DC03 standard. (this subset sould be enough for over 90% of the use cases though)
+3. extend the dc03_msg class to handle all keys defined in the DC03 standard. (this subset should be enough for over 90% of the use cases though)
 4. extend the dc09_msg class with the extensions of the SIA-DC09 2013 version
 
 
