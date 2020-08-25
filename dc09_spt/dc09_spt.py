@@ -32,7 +32,7 @@ class dc09_spt:
     limitations under the License.
     """
 
-    def __init__(self, account, receiver=None, line=None):
+    def __init__(self, account, receiver=None, line=None, callback=None):
         """
         Define a basic dialler (SPT Secure Premises Transceiver)
         
@@ -88,7 +88,7 @@ class dc09_spt:
         self.routines = []
         self.routines_changed = 0
         self.poll_active = 0
-        self.msg_callback = None
+        self.msg_callback = callback
 
     # ---------------------
     # configure transmission paths
@@ -344,18 +344,21 @@ class dc09_spt:
         if conn is not None:
             antw = conn.sendAndReceive(mesg, 512)
             if antw is not None:
-                res = dc09.dc09answer(msg_nr, antw.decode())
-                if res is not None:
-                    path.set_offset(res[1])
-                    if res[0] == 'NAK':
-                        dc09.set_offset(res[1])
-                        mesg = str.encode(dc09.dc09block(msg_nr, mtype, message))
-                        conn.send(mesg)
-                        antw = conn.receive(1024)
-                        if antw is not None:
-                            res = dc09.dc09answer(self.msg_nr, antw)
-                    if res[0] == 'ACK':
-                        ret = True
+                try:
+                    res = dc09.dc09answer(msg_nr, antw.decode())
+                    if res is not None:
+                        path.set_offset(res[1])
+                        if res[0] == 'NAK':
+                            dc09.set_offset(res[1])
+                            mesg = str.encode(dc09.dc09block(msg_nr, mtype, message))
+                            conn.send(mesg)
+                            antw = conn.receive(1024)
+                            if antw is not None:
+                                res = dc09.dc09answer(self.msg_nr, antw)
+                        if res[0] == 'ACK':
+                            ret = True
+                except Exception as e:
+                    logging.error("Answer decode error %s", repr(e))
             logging.debug('Sent message nr %s mtype %s content %s to %s port %s answer %s', msg_nr, mtype, message,
                           path.host, path.port, antw)
         if conn is not None:

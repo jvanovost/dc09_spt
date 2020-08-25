@@ -133,7 +133,7 @@ class dc09_msg:
             ret = '"' + dc09type + '"'
         else:
             ret = '"*' + dc09type + '"'
-        ret += '{0:04X}'.format(msg_nr)
+        ret += '{0:04n}'.format(msg_nr)
         if self.receiver is not None:
             ret += 'R{0:X}'.format(self.receiver)
         if self.line is not None:
@@ -186,10 +186,10 @@ class dc09_msg:
         if crc != i:
             raise Exception("CRC of Answer incorrect")
         if answer[10] == '*':
-            mnr = int(answer[15:19], 16)
+            mnr = int(answer[15:19], 10)
             ret = answer[11:14]
         else:
-            mnr = int(answer[14:18], 16)
+            mnr = int(answer[14:18], 10)
             ret = answer[10:13]
         if mnr != msg_nr and ret != 'NAK':
             raise Exception("Invalid message number")
@@ -206,8 +206,11 @@ class dc09_msg:
             tm = answer[-19:]
         if tm is not None:
             now = datetime.datetime.utcnow()
-            receivertime = datetime.datetime.strptime(tm, "%H:%M:%S,%m-%d-%Y")
-            offset = (receivertime-now).total_seconds()
+            try:
+                receivertime = datetime.datetime.strptime(tm, "%H:%M:%S,%m-%d-%Y")
+                offset = (receivertime-now).total_seconds()
+            except:
+                raise Exception("Invalid time string ({0})".format(tm))
         return ret, offset
 
     @staticmethod
