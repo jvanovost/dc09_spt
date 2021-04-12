@@ -5,7 +5,7 @@
 # ----------------------------
 import datetime
 import random
-from Crypto.Cipher import AES
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 
 class dc09_msg:
@@ -96,8 +96,9 @@ class dc09_msg:
         now = datetime.datetime.utcnow()+datetime.timedelta(seconds=self.offset)
         crypt += data + '_{:%H:%M:%S,%m-%d-%Y}'.format(now)
         iv = 16 * chr(0)
-        encryption_suite = AES.new(self.key, AES.MODE_CBC, iv)
-        return encryption_suite.encrypt(crypt)
+        cipher = Cipher(algorithms.AES(self.key), modes.CBC(bytes(iv, "ASCII")))
+        encryptor = cipher.encryptor()
+        return encryptor.update(bytes(crypt, "ASCII")) + encryptor.finalize()
 
     def dc09decrypt(self,  data):
         """
@@ -106,8 +107,9 @@ class dc09_msg:
         if len(data) % 16 != 0:
             raise Exception('Data length not a multiple of 16')
         iv = 16 * chr(0)
-        encryption_suite = AES.new(self.key, AES.MODE_CBC, iv)
-        return encryption_suite.decrypt(data)
+        cipher = Cipher(algorithms.AES(self.key),modes.CBC(bytes(iv,"ASCII")))
+        decryptor = cipher.decryptor()
+        return decryptor.update(data) + decryptor.finalize()
 
     def dc09block(self,  msg_nr=0,  dc09type="NULL",  msg="]"):   
         """

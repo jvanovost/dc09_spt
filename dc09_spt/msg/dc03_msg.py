@@ -55,7 +55,7 @@ class dc03_codes:
         Codes that have the area number following the code.
         Note that there is no way to transfer a zone in the message
         """
-        codes_with_area = {"BA", "CA", "CD", "CG", "CI", "CT", "CW", "FI", "FK", "JA", "JR", "NF", 
+        codes_with_area = {"BV", "CA", "CD", "CG", "CI", "CT", "CW", "FI", "FK", "JA", "JR", "NF",
                            "NL", "NM", "OA", "OG", "OI"}
         return code in codes_with_area
 

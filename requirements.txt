@@ -1,2 +1,2 @@
-pycrypto
+cryptography 3.4
 
