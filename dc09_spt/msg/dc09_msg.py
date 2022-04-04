@@ -205,7 +205,10 @@ class dc09_msg:
         if len(answer) > 22 and answer[-22:-20] == ']_':
             tm = answer[-20:-1]
         if len(answer) > 20 and answer[-21:-19] == ']_':
-            tm = answer[-19:]
+            if answer[-1] == "\r":
+                tm = answer[-19:-1]
+            else:
+                tm = answer[-19:]
         if tm is not None:
             now = datetime.datetime.utcnow()
             try:
