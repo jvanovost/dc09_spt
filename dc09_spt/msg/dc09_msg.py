@@ -144,7 +144,7 @@ class dc09_msg:
         if self.key is None:
             ret += msg
         else:
-            if type != "NULL":
+            if dc09type != "NULL":
                 msg = '|' + msg
             ret += self.dc09crypt(msg).hex().upper()
         ret = '\n' + '{0:04X}'.format(self.dc09crc(ret)) + '{0:04X}'.format(len(ret)) + ret + '\r'
