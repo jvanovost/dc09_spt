@@ -236,6 +236,7 @@ class dc09_spt:
                 current implemented is :
                     'SIA' or 'SIA-DCS' for sending a message with a SIA-DC03 payload
                     'CID' or 'ADM-CID' for sending a message with a SIA-DC05 payload
+                    'CONTACT-ID' for sending a message with a SIA-DC05 payload
             mparam
                 a map of key value pairs defining the message content.
                 for a description of possible values see the documentation of the payload
@@ -256,6 +257,9 @@ class dc09_spt:
             dc09type = 'SIA-DCS'
         if mtype == 'CID' or mtype == 'ADM-CID':
             msg = dc05_msg.dc05event(self.account, mparam)
+            dc09type = 'ADM-CID'
+        if mtype == 'CONTACT-ID':
+            msg = dc05_msg.conactid2dc05(self.account, mparam)
             dc09type = 'ADM-CID'
         extra = dc09_msg.dc09_extra(mparam)
         if extra is not None:
