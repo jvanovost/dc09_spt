@@ -21,7 +21,7 @@ setuptools.setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-    	'cryptograpy>=3.1'
+    	'cryptography>=3.1'
     	]
 )
 
